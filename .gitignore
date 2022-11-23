@@ -1,3 +1,32 @@
+Skip to content
+Search or jump to…
+Pull requests
+Issues
+Codespaces
+Marketplace
+Explore
+
+@Ferdinand-I
+Ferdinand-I
+/
+weather_bot
+Private
+Code
+Issues
+Pull requests
+Actions
+Projects
+Security
+Insights
+Settings
+weather_bot/.gitignore
+@Ferdinand-I
+Ferdinand-I Initial commit
+Latest commit 8012b58 1 minute ago
+ History
+ 1 contributor
+129 lines (105 sloc)  1.76 KB
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
@@ -125,5 +154,24 @@ venv.bak/
 .dmypy.json
 dmypy.json
 
+.idea/
+
 # Pyre type checker
 .pyre/
+Footer
+© 2022 GitHub, Inc.
+Footer navigation
+Terms
+Privacy
+Security
+Status
+Docs
+Contact GitHub
+Pricing
+API
+Training
+Blog
+About
+weather_bot/.gitignore at main · Ferdinand-I/weather_bot
+
+trans.py
