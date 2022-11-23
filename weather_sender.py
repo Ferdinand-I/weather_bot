@@ -83,7 +83,7 @@ def send_message(message, recipients: list):
 
 
 def main():
-    schedule.every(10).seconds.do(
+    schedule.every().day.at('11:00').do(
         send_message, get_weather_data(), RECIPIENTS_IDS)
     while True:
         schedule.run_pending()
