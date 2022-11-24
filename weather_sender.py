@@ -83,7 +83,8 @@ def send_message(message, recipients: list):
 
 
 def main():
-    schedule.every().day.at('11:00').do(
+    send_message('Бот запущен!', RECIPIENTS_IDS)
+    schedule.every().day.at('09:00').do(
         send_message, get_weather_data(), RECIPIENTS_IDS)
     while True:
         schedule.run_pending()
