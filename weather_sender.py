@@ -1,4 +1,6 @@
 import os
+import sys
+import threading
 import time
 from datetime import datetime
 
@@ -7,7 +9,6 @@ import schedule
 from dotenv import load_dotenv
 from googletrans import Translator
 
-
 load_dotenv()
 
 RECIPIENTS_IDS = [os.getenv('TG_ID'), ]
@@ -15,10 +16,13 @@ RECIPIENTS_IDS = [os.getenv('TG_ID'), ]
 TG_BOT_TOKEN = os.getenv('TG_BOT_TOKEN')
 YANDEX_API_KEY = os.getenv('YANDEX_API_KEY')
 
+TG_GET_UPDATES = f'https://api.telegram.org/bot{TG_BOT_TOKEN}/getUpdates'
 TG_SEND_MESSAGE = f'https://api.telegram.org/bot{TG_BOT_TOKEN}/sendMessage'
 YANDEX_WEATHER_API = 'https://api.weather.yandex.ru/v2/forecast?'
 
 ICON_TEMPLATE = 'https://yastatic.net/weather/i/icons/funky/dark/{}.svg'
+
+VALID_ARGS_MEASURE = ['h', 'd', 'm']
 
 PREC_TYPE = {
     0: 'Без осадков',
@@ -31,7 +35,21 @@ PREC_TYPE = {
 translator = Translator()
 
 
+def get_userid_by_updates():
+    while True:
+        response = requests.get(TG_GET_UPDATES)
+        result = (response.json().get('result'))
+        users = [i.get('message').get('from').get('id') for i in result]
+        if users:
+            for i in users:
+                if str(i) not in RECIPIENTS_IDS:
+                    RECIPIENTS_IDS.append(str(i))
+        users.clear()
+        time.sleep(30)
+
+
 def get_weather_data():
+    """"""
     headers = {
         'X-Yandex-API-Key': YANDEX_API_KEY,
         'lat': '59.93428',
@@ -45,6 +63,11 @@ def get_weather_data():
         url=YANDEX_WEATHER_API,
         headers=headers
     )
+    if response.status_code == 403:
+        return (
+            'Не удалось получить данные о погоде, так как доступ к ресурсу'
+            'ограничен. Проверьте валидность вашего ключа APi.'
+        )
     unix_datetime = int(response.json().get('now'))
     date_time = datetime.utcfromtimestamp(unix_datetime).strftime(
         '%A %d.%m.%y'
@@ -82,14 +105,39 @@ def send_message(message, recipients: list):
         )
 
 
-def main():
+def get_measure_count_argv():
+    args = sys.argv
+    if len(args) >= 3:
+        if args[1] in VALID_ARGS_MEASURE and args[2].isdigit():
+            return args[1], int(args[2])
+        return None, None
+    return None, None
+
+
+def main(time_measure='h', count=24):
     send_message('Бот запущен!', RECIPIENTS_IDS)
-    schedule.every().day.at('09:00').do(
-        send_message, get_weather_data(), RECIPIENTS_IDS)
+    if time_measure == 'h':
+        schedule.every(count).hours.do(
+            send_message, get_weather_data(), RECIPIENTS_IDS)
+    elif time_measure == 'd':
+        schedule.every(count).days.do(
+            send_message, get_weather_data(), RECIPIENTS_IDS)
+    else:
+        schedule.every(count).minutes.do(
+            send_message, get_weather_data(), RECIPIENTS_IDS)
     while True:
         schedule.run_pending()
         time.sleep(1)
 
 
 if __name__ == '__main__':
-    main()
+    measure, count_measure = get_measure_count_argv()
+    first_thread = threading.Thread(target=get_userid_by_updates)
+    if measure and count_measure:
+        second_thread = threading.Thread(
+            target=main, args=[measure, count_measure]
+        )
+    else:
+        second_thread = threading.Thread(target=main)
+    first_thread.start()
+    second_thread.start()
